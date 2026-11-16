@@ -1,0 +1,40 @@
+name: "🐛 Bug"
+description: WAY 서버의 예상과 다른 동작을 제보합니다.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 실제 동작
+      description: 어떤 픽업 단계에서 무엇이 잘못됐는지 적어주세요. 관찰한 응답, 이벤트 또는 화면 결과를 함께 적어주세요.
+      placeholder: 예) 대기 시작 요청을 다시 보내면 기존 대기 종료 시각이 뒤로 밀립니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 재현 조건과 절차
+      description: 테스트 환경(로컬·PT 연동 등), 요청한 클라이언트, 픽업 상태와 재현 단계를 적어주세요. 재현하지 못했다면 관찰한 조건을 적어주세요.
+      placeholder: |
+        1. 차량 앱에서 이동 중인 픽업의 대기를 시작합니다.
+        2. 첫 요청은 서버에서 처리하되 차량 앱이 응답을 받지 못하게 합니다.
+        3. 같은 픽업에 대기 시작을 다시 요청한 뒤 종료 시각을 비교합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+      description: 정상이라면 어떤 결과가 나와야 하는지 적어주세요. 근거가 되는 명세가 있으면 연결해주세요.
+      placeholder: 예) A-06의 첫 대기 시작 요청에서 정한 종료 시각이 재요청 후에도 유지됩니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 추가 증거
+      description: 요청·응답, WebSocket 메시지, 로그나 화면을 첨부할 수 있습니다. 전화번호, 초대 코드, 토큰, 차량 식별값은 가린 뒤 올려주세요.

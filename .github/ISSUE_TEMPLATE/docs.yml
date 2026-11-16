@@ -1,0 +1,28 @@
+name: "📝 Docs"
+description: WAY 서버의 명세, 설계 기록, 개발 문서를 작성하거나 갱신합니다.
+title: "[Docs] "
+labels: [docs]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: 대상 문서와 수정 이유
+      description: 변경할 파일 경로나 문서 링크, 보완할 내용을 적어주세요.
+      placeholder: "예) docs/project-context.md: 팀에서 합의한 대기 시작·재시도 규칙을 반영합니다."
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: 반영할 내용
+      description: 독자가 문서에서 확인할 수 있어야 하는 내용을 적어주세요. 미정 사항이 있다면 함께 표시해주세요.
+      placeholder: 예) 첫 대기 시작 요청과 재요청에서 종료 시각을 어떻게 다루는지 설명합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 근거와 함께 갱신할 문서
+      description: 관련 API 명세, ADR, 코드, 테스트 또는 함께 수정해야 할 문서가 있으면 연결해주세요.

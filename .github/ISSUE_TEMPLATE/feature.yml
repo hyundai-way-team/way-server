@@ -1,0 +1,31 @@
+name: "✨ Feature"
+description: 픽업 흐름에 필요한 서버 기능을 제안합니다.
+title: "[Feat] "
+labels: [feature]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 필요한 기능
+      description: 어느 픽업 단계에서 차량 앱이나 동승자 웹에 어떤 서버 동작이 필요한지 적어주세요.
+      placeholder: 예) 동승자 웹을 새로고침해도 확정된 픽업 핀과 대기 상태를 다시 볼 수 있도록 조회 API를 추가합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 조건
+      description: 어떤 요청이나 상황에서 어떤 결과가 나오면 완료인지 적어주세요.
+      placeholder: |
+        - [ ] 대기 중인 픽업을 조회하면 최초 대기 종료 시각을 기준으로 남은 시간이 반환된다.
+        - [ ] 해당 픽업에 접근 권한이 없는 요청은 거부된다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: 관련 명세와 이슈
+      description: 해당하는 API·WebSocket 명세나 관련 이슈를 연결해주세요.
+      placeholder: 예) A-04 픽업 조회 명세 링크

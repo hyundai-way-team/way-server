@@ -1,0 +1,31 @@
+name: "♻️ Refactor"
+description: 외부 동작을 유지하면서 서버 내부 구조를 개선합니다.
+title: "[Refactor] "
+labels: [refactor]
+body:
+  - type: textarea
+    id: target
+    attributes:
+      label: 개선 대상과 이유
+      description: 대상 코드와 지금 겪는 문제를 적어주세요.
+      placeholder: 예) 픽업 조회와 실시간 연결에 차량 소유권 검증이 중복돼 규칙이 달라질 수 있습니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: 변경 범위
+      description: 어느 코드를 정리할지 적어주세요. 관련 코드나 이슈가 있으면 연결해주세요.
+      placeholder: 예) 두 요청에서 같은 차량 소유권 검증 로직을 사용하도록 정리합니다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 유지할 동작과 확인 방법
+      description: 변경 전후에 같아야 하는 API 응답, 권한 판단 또는 상태 전이를 적고 어떻게 비교할지 설명해주세요.
+      placeholder: 예) 동일한 차량 식별값으로 각 요청을 보내 허용·거부 결과가 바뀌지 않는지 확인합니다.
+    validations:
+      required: true
