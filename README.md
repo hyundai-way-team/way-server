@@ -30,13 +30,39 @@ MVP에서 서버는 픽업 생성과 초대 링크 발급, 차량·동승자 권
 
 - Java 21, Spring Boot 4.1.2, Gradle Wrapper
 - REST API와 실시간 갱신을 위한 Spring MVC, WebSocket 의존성
-- 데이터 저장과 스키마 관리를 위한 Spring Data JPA, MySQL, Flyway 의존성
+- 데이터 저장을 위한 Spring Data JPA와 MySQL
 
-로컬 실행과 컨텍스트 로딩 테스트에는 JDK 21과 접속 가능한 MySQL이 필요합니다. 실행 환경에서 `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`를 설정하고 저장소 루트에서 아래 명령을 사용합니다.
+### MySQL 기동
+
+로컬 실행에는 JDK 21과 Docker Compose가 필요합니다. MySQL을 띄우기 전에 Docker를 실행합니다. 처음 실행할 때 저장소 루트에서 [`.env.example`](.env.example)을 `.env.local`로 복사하고, DB 이름과 앱 계정, 앱 비밀번호, root 비밀번호를 채웁니다. `MYSQL_PORT`를 비워두면 호스트 포트는 `3306`입니다.
 
 ```bash
-./gradlew bootRun
-./gradlew test
+cp -n .env.example .env.local
 ```
 
-실행 절차는 저장소 설정을 기준으로 정리했으며, MySQL을 연결한 구동과 테스트는 확인이 필요합니다.
+[`compose.local.yaml`](compose.local.yaml)로 MySQL을 띄웁니다. `--wait`는 앱 계정으로 DB에 접속하는 healthcheck가 성공할 때까지 기다립니다.
+
+```bash
+docker compose --env-file .env.local -f compose.local.yaml up --wait
+```
+
+### Spring 연결
+
+IntelliJ에서 `WayApplication`의 실행 설정을 열어 **Active profiles**에 `local`을 입력하고 **Environment variables**에 `.env.local` 파일을 지정합니다. [`application-local.yaml`](src/main/resources/application-local.yaml)이 `MYSQL_PORT`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`로 접속 설정을 구성합니다. Compose에서 기본 포트를 사용했다면 `.env.local`의 `MYSQL_PORT`를 `3306`으로 설정합니다.
+
+터미널에서 실행할 때는 아래 환경변수의 `<...>`를 `.env.local`의 값으로 바꿉니다.
+
+```bash
+export SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:<MYSQL_PORT>/<MYSQL_DATABASE>'
+export SPRING_DATASOURCE_USERNAME='<MYSQL_USER>'
+export SPRING_DATASOURCE_PASSWORD='<MYSQL_PASSWORD>'
+./gradlew bootRun
+```
+
+IntelliJ에서 `local` 프로필로 Docker MySQL에 연결해 서버가 기동하는 것을 확인했습니다. 컨텍스트 로딩 테스트는 MySQL이 실행 중인 상태에서 위 `SPRING_DATASOURCE_*` 환경변수로 `./gradlew test`를 실행합니다.
+
+### MySQL 볼륨
+
+`local` 프로필의 `ddl-auto: create-drop`은 Hibernate가 관리하는 테이블을 서버 시작 시 재생성하고 종료 시 삭제합니다. 해당 테이블을 유지하려면 실행 설정에서 `SPRING_JPA_HIBERNATE_DDL_AUTO=none`으로 덮어씁니다.
+
+`mysql-data` 볼륨에 DB가 저장되므로 `docker compose --env-file .env.local -f compose.local.yaml down`으로 컨테이너를 내려도 데이터는 남습니다. DB 이름과 계정, 비밀번호는 빈 볼륨을 처음 초기화할 때 적용됩니다. 기존 볼륨이 있으면 `.env.local`에서 값을 바꿔도 DB와 계정은 그대로라 healthcheck나 Spring 연결이 실패할 수 있습니다. `down --volumes`를 사용하면 볼륨과 그 안의 데이터가 삭제됩니다.
