@@ -34,13 +34,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public @Nullable ResponseEntity<Object> handleBusinessException(BusinessException exception, WebRequest request) {
         ErrorCode errorCode = exception.getErrorCode();
-        return handleExceptionInternal(exception, ErrorResponse.from(errorCode), new HttpHeaders(),
+        return handleExceptionInternal(
+                exception, ErrorResponse.from(errorCode),
+                new HttpHeaders(),
                 errorCode.getStatus(), request);
     }
 
     @ExceptionHandler(Exception.class)
     public @Nullable ResponseEntity<Object> handleUnexpectedException(Exception exception, WebRequest request) {
-        return handleExceptionInternal(exception, null, new HttpHeaders(),
+        return handleExceptionInternal(
+                exception, null, new HttpHeaders(),
                 CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus(), request);
     }
 
@@ -48,21 +51,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected @Nullable ResponseEntity<Object> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
         List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
+
         if (fieldErrors.stream().anyMatch(FieldError::isBindingFailure)) {
             return handleExceptionInternal(exception, null, headers, status, request);
         }
+
         List<FieldErrorDetail> errors = fieldErrors.stream()
                 .map(error -> fieldError(error.getField(), error))
                 .toList();
+
         return handleExceptionInternal(exception, validationFailure(errors), headers, status, request);
     }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleHandlerMethodValidationException(
             HandlerMethodValidationException exception, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+
         if (exception.isForReturnValue()) {
             return handleExceptionInternal(exception, null, headers, status, request);
         }
+
         List<FieldErrorDetail> errors = new ArrayList<>();
         for (var result : exception.getParameterValidationResults()) {
             if (result instanceof ParameterErrors parameterErrors) {
@@ -76,12 +84,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 result.getResolvableErrors().forEach(error -> errors.add(fieldError(field, error)));
             }
         }
+
         return handleExceptionInternal(exception, validationFailure(errors), headers, status, request);
     }
 
     @Override
     protected @Nullable ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException exception, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+
         ErrorResponse body = new ErrorResponse(CommonErrorCode.BAD_REQUEST.getCode(), "요청 본문을 확인해 주세요.");
         return handleExceptionInternal(exception, body, headers, status, request);
     }
@@ -102,6 +112,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.putAll(headers);
         responseHeaders.setContentType(MediaType.APPLICATION_JSON);
+
         return new ResponseEntity<>(response, responseHeaders, status);
     }
 

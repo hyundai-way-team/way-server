@@ -1,5 +1,7 @@
 package com.hyundai.way.global.exception;
 
+import com.hyundai.way.domain.pickup.exception.PickupErrorCode;
+import com.hyundai.way.domain.pickup.exception.PickupException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Min;
@@ -11,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.json.JsonCompareMode;
 import org.springframework.test.web.servlet.MockMvc;
@@ -41,8 +42,8 @@ class GlobalExceptionHandlerTests {
     }
 
     @Test
-    void preservesDomainErrorStatusAndBody() throws Exception {
-        mockMvc.perform(get("/test/domain-error"))
+    void returnsForbiddenWhenPickupInvitationIsUnavailable() throws Exception {
+        mockMvc.perform(post("/test/invitations/exchange"))
                 .andExpect(status().isForbidden())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("""
@@ -121,9 +122,9 @@ class GlobalExceptionHandlerTests {
     @RestController
     static class TestController {
 
-        @GetMapping("/test/domain-error")
-        void domainError() {
-            throw new TestBusinessException();
+        @PostMapping("/test/invitations/exchange")
+        void exchangeInvitation() {
+            throw new PickupException(PickupErrorCode.INVITATION_UNAVAILABLE);
         }
 
         @PostMapping("/test/pickups")
@@ -151,27 +152,5 @@ class GlobalExceptionHandlerTests {
     }
 
     record PickupLocation(@DecimalMax(value = "90", message = "위도는 90 이하여야 합니다.") double latitude) {
-    }
-
-    private static class TestBusinessException extends BusinessException {
-
-        TestBusinessException() {
-            super(new ErrorCode() {
-                @Override
-                public HttpStatus getStatus() {
-                    return HttpStatus.FORBIDDEN;
-                }
-
-                @Override
-                public String getCode() {
-                    return "INVITATION_UNAVAILABLE";
-                }
-
-                @Override
-                public String getMessage() {
-                    return "사용할 수 없는 초대입니다.";
-                }
-            });
-        }
     }
 }
