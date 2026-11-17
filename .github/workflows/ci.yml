@@ -51,3 +51,8 @@ jobs:
         run: |
           java --version
           ./gradlew --version
+
+      - name: Create Docker Image
+        run: |
+          docker build -t way-server:ci .
+          docker image inspect way-server:ci --format '{{json .Config.Entrypoint}} {{.Os}}/{{.Architecture}}'
