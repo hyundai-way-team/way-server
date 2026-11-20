@@ -5,9 +5,11 @@ import com.hyundai.way.domain.pickup.dto.request.PickupCreateRequest;
 import com.hyundai.way.domain.pickup.dto.response.PickupCreateResponse;
 import com.hyundai.way.domain.pickup.dto.response.PickupCreateResult;
 import com.hyundai.way.domain.pickup.service.PickupService;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,9 +22,10 @@ public class PickupController {
 
     @PostMapping
     public PickupCreateResponse create(
+            @RequestHeader("VIN") @NotBlank String vin,
             @RequestBody PickupCreateRequest request) {
         PickupCreateCommand command = request.toCommand();
-        PickupCreateResult result = pickupService.createPickup(command, "vehicleKey");
+        PickupCreateResult result = pickupService.createPickup(command, vin);
 
         return PickupCreateResponse.create(result.pickupId(), result.invitationWebURL());
     }

@@ -56,7 +56,7 @@ public class Pickup extends BaseEntity {
     @Column(name = "waiting_ends_at")
     private Instant waitingEndsAt;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "vehicle_key", nullable = false)
     private Vehicle vehicle;
 
