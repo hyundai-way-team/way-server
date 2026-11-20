@@ -68,24 +68,22 @@ public class Pickup extends BaseEntity {
     //=== Constructor ===
     @Builder(access = AccessLevel.PRIVATE)
     private Pickup(String requestId, String passengerName, Locaion pickupLocation,
-                   String destination, Instant waitingEndsAt, Vehicle vehicle) {
+                   String destination, Instant waitingEndsAt) {
         this.requestId = requestId;
         this.passengerName = passengerName;
         this.pickupLocation = pickupLocation;
         this.destination = destination;
         this.waitingEndsAt = waitingEndsAt;
-        this.vehicle = vehicle;
     }
 
     public static Pickup create(
             String requestId, String passengerName, Locaion pickupLocation,
-            String destination, Instant waitingEndsAt, Vehicle vehicle, Completion completion) {
+            String destination, Vehicle vehicle) {
         Pickup build = Pickup.builder()
                 .requestId(requestId)
                 .passengerName(passengerName)
                 .pickupLocation(pickupLocation)
                 .destination(destination)
-                .waitingEndsAt(waitingEndsAt)
                 .build();
 
         build.connectWithVehicle(vehicle);
@@ -112,5 +110,6 @@ public class Pickup extends BaseEntity {
 
     //=== Domain Polish ===
 
+    //TODO: waitingEndsAt 추가 메서드 제작
 
 }
