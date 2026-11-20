@@ -8,16 +8,21 @@ import com.hyundai.way.domain.pickup.dto.response.PickupCreateResult;
 import com.hyundai.way.domain.pickup.repository.PickupRepository;
 import com.hyundai.way.domain.vehicle.domain.Vehicle;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.hyundai.way.domain.pickup.dto.request.PickupCreateCommand.*;
 
+@Slf4j
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PickupService {
 
     private final PickupRepository pickupRepository;
 
+    @Transactional
     public PickupCreateResult createPickup(PickupCreateCommand command, String vehicleKey) {
         Passenger passenger = command.passenger();
         PickupLocation pickupLocation = command.pickupLocation();
@@ -29,7 +34,8 @@ public class PickupService {
         //TODO: invitationWebURL 생성 로직 제작
         String invitationWebURL = "https://{webHost}/p/join#code={participationCode}";
 
-        return PickupCreateResult.from(savedPickup.getRequestId(), invitationWebURL);
+        log.info("Save Pickup={}", savedPickup);
+        return PickupCreateResult.from(savedPickup.getId(), invitationWebURL);
     }
 
     private Pickup getPickup(PickupCreateCommand command, String vehicleKey, Passenger passenger, Locaion locaion) {

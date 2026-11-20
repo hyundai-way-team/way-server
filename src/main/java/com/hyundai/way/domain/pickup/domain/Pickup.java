@@ -3,6 +3,7 @@ package com.hyundai.way.domain.pickup.domain;
 import com.hyundai.way.domain.invitation.domain.Invitation;
 import com.hyundai.way.domain.vehicle.domain.Vehicle;
 import com.hyundai.way.global.entity.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -55,14 +56,14 @@ public class Pickup extends BaseEntity {
     @Column(name = "waiting_ends_at")
     private Instant waitingEndsAt;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false, cascade = CascadeType.PERSIST)
     @JoinColumn(name = "vehicle_key", nullable = false)
     private Vehicle vehicle;
 
     @OneToOne(mappedBy = "pickup")
     private Invitation invitation;
 
-    @OneToOne(mappedBy = "pickup")
+    @OneToOne(mappedBy = "pickup", cascade = CascadeType.PERSIST)
     private Completion completion;
 
     //=== Constructor ===
