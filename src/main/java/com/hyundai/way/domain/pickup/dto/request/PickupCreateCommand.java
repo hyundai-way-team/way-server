@@ -2,12 +2,12 @@ package com.hyundai.way.domain.pickup.dto.request;
 
 public record PickupCreateCommand(
         String requestId,
+        String vehicleNumber,
         Passenger passenger,
         PickupLocation pickupLocation,
         String destination
 ) {
     public record Passenger(
-            String vehicleNumber,
             String name,
             String phoneNumber
     ) {}

@@ -15,3 +15,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+way:
+  pickup:
+    invitation-web-base-url: ${WAY_PICKUP_INVITATION_WEB_BASE_URL:http://localhost:3000}

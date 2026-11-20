@@ -19,7 +19,7 @@ public final class ParticipationCode {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    public static String codeLoockupKey(String code) {
+    public static String lookupKey(String code) {
         try {
             MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
             byte[] hash = sha256.digest(code.getBytes(StandardCharsets.UTF_8));

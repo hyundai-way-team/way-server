@@ -61,6 +61,8 @@ SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 
 `local` 프로필로 기동하면 테스트 차량 `DEMO-VIN-001`이 자동 등록됩니다. 픽업 API를 호출할 때 `VIN: DEMO-VIN-001` 헤더를 보냅니다.
 
+초대 링크에 사용할 동승자 웹 주소는 `WAY_PICKUP_INVITATION_WEB_BASE_URL`로 지정합니다. `local` 프로필의 기본값은 `http://localhost:3000`이며 시연 서버에서는 동승자 웹의 HTTPS 주소를 설정합니다.
+
 IntelliJ에서 `local` 프로필로 Docker MySQL에 연결해 서버가 기동하는 것을 확인했습니다. 컨텍스트 로딩 테스트는 MySQL이 실행 중인 상태에서 위 `SPRING_DATASOURCE_*` 환경변수로 `./gradlew test`를 실행합니다.
 
 ### MySQL 볼륨
