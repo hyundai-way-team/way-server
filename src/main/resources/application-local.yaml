@@ -3,10 +3,19 @@ spring:
     url: jdbc:mysql://localhost:${MYSQL_PORT:3306}/${MYSQL_DATABASE}
     username: ${MYSQL_USER}
     password: ${MYSQL_PASSWORD}
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/local/seed-vehicles.sql
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
+way:
+  pickup:
+    invitation-web-base-url: ${WAY_PICKUP_INVITATION_WEB_BASE_URL:http://localhost:3000}

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode
 public class Locaion {
 
@@ -22,5 +22,9 @@ public class Locaion {
     private Double latitude;
 
     @Column(name = "pickup_longitude", nullable = false)
-    private Double longtitude;
+    private Double longitude;
+
+    public static Locaion create(String address, Double latitude, Double longitude) {
+        return new Locaion(address, latitude, longitude);
+    }
 }

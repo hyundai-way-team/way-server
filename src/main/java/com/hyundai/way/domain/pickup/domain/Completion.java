@@ -1,6 +1,7 @@
 package com.hyundai.way.domain.pickup.domain;
 
 import com.hyundai.way.global.entity.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -23,7 +24,7 @@ public class Completion extends BaseEntity {
     private Long pickupId;
 
     @MapsId
-    @OneToOne
+    @OneToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name = "pickup_id")
     private Pickup pickup;
 

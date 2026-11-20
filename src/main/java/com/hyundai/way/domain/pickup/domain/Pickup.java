@@ -3,6 +3,7 @@ package com.hyundai.way.domain.pickup.domain;
 import com.hyundai.way.domain.invitation.domain.Invitation;
 import com.hyundai.way.domain.vehicle.domain.Vehicle;
 import com.hyundai.way.global.entity.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -59,33 +60,31 @@ public class Pickup extends BaseEntity {
     @JoinColumn(name = "vehicle_key", nullable = false)
     private Vehicle vehicle;
 
-    @OneToOne(mappedBy = "pickup")
+    @OneToOne(mappedBy = "pickup", cascade = CascadeType.PERSIST)
     private Invitation invitation;
 
-    @OneToOne(mappedBy = "pickup")
+    @OneToOne(mappedBy = "pickup", cascade = CascadeType.PERSIST)
     private Completion completion;
 
     //=== Constructor ===
     @Builder(access = AccessLevel.PRIVATE)
     private Pickup(String requestId, String passengerName, Locaion pickupLocation,
-                   String destination, Instant waitingEndsAt, Vehicle vehicle) {
+                   String destination, Instant waitingEndsAt) {
         this.requestId = requestId;
         this.passengerName = passengerName;
         this.pickupLocation = pickupLocation;
         this.destination = destination;
         this.waitingEndsAt = waitingEndsAt;
-        this.vehicle = vehicle;
     }
 
     public static Pickup create(
             String requestId, String passengerName, Locaion pickupLocation,
-            String destination, Instant waitingEndsAt, Vehicle vehicle, Completion completion) {
+            String destination, Vehicle vehicle) {
         Pickup build = Pickup.builder()
                 .requestId(requestId)
                 .passengerName(passengerName)
                 .pickupLocation(pickupLocation)
                 .destination(destination)
-                .waitingEndsAt(waitingEndsAt)
                 .build();
 
         build.connectWithVehicle(vehicle);
@@ -112,5 +111,6 @@ public class Pickup extends BaseEntity {
 
     //=== Domain Polish ===
 
+    //TODO: waitingEndsAt 추가 메서드 제작
 
 }
