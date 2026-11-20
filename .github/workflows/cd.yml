@@ -1,0 +1,136 @@
+name: cd.yml
+
+on:
+  workflow_run:
+    workflows: [ci.yml]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-image:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' }}
+    concurrency:
+      group: way-ecs-deploy
+      queue: max
+    runs-on: ubuntu-24.04-arm
+    env:
+      CI_SHA: ${{ github.event.workflow_run.head_sha }}
+      ECS_CLUSTER: way
+      ECS_SERVICE: way-server
+      BASE_URL: ${{ vars.WAY_BASE_URL }}
+
+    steps:
+      - name: Check out the commit tested by CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.CI_SHA }}
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Build the executable JAR
+        run: ./gradlew bootJar
+
+      - name: Build and verify the ECS image
+        run: |
+          test "$(git rev-parse HEAD)" = "$CI_SHA"
+          image="way-server:$CI_SHA"
+          docker build --platform linux/arm64 -t "$image" .
+          platform="$(docker image inspect "$image" --format '{{.Os}}/{{.Architecture}}')"
+          test "$platform" = linux/arm64
+          printf 'Built %s (%s)\n' "$image" "$platform"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+          allowed-account-ids: '762332938182'
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity --query Arn --output text
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2.2.0
+
+      - name: Push ARM64 image to ECR
+        id: push-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          tag="$CI_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          remote_image="$ECR_REGISTRY/way:$tag"
+          docker image tag "way-server:$CI_SHA" "$remote_image"
+          docker image push --platform linux/arm64 "$remote_image"
+          printf 'Pushed %s\n' "$remote_image"
+          printf 'image=%s\n' "$remote_image" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare ECS deployment
+        id: current-task
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$CI_SHA" != "$latest_sha" ]]; then
+            echo 'Skipping deployment because main has advanced.'
+            exit 0
+          fi
+
+          if [[ ! "$BASE_URL" =~ ^https?://[^[:space:]]+$ ]]; then
+            echo 'Set the WAY_BASE_URL repository variable to the service base URL.' >&2
+            exit 1
+          fi
+
+          arn="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].taskDefinition' --output text)"
+          if [[ "$arn" != arn:aws:ecs:ap-southeast-2:762332938182:task-definition/way-server:* ]]; then
+            printf 'Expected a way-server task definition. Got: %s\n' "$arn" >&2
+            exit 1
+          fi
+          printf 'arn=%s\n' "$arn" >> "$GITHUB_OUTPUT"
+
+      - name: Set the new image in the task definition
+        id: render
+        if: steps.current-task.outputs.arn != ''
+        uses: aws-actions/amazon-ecs-render-task-definition@v1.9.1
+        with:
+          task-definition-arn: ${{ steps.current-task.outputs.arn }}
+          container-name: way-server
+          image: ${{ steps.push-image.outputs.image }}
+
+      - name: Deploy to the ECS service
+        id: deploy
+        if: steps.current-task.outputs.arn != ''
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2.6.4
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true
+
+      - name: Verify deployed revision and API
+        if: steps.current-task.outputs.arn != ''
+        shell: bash
+        env:
+          EXPECTED_ARN: ${{ steps.deploy.outputs.task-definition-arn }}
+        run: |
+          actual_arn="$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0].taskDefinition' --output text)"
+          if [[ -z "$EXPECTED_ARN" || "$actual_arn" != "$EXPECTED_ARN" ]]; then
+            printf 'Expected revision %s, but service is using %s\n' "$EXPECTED_ARN" "$actual_arn" >&2
+            exit 1
+          fi
+          printf 'Active task definition: %s\n' "$actual_arn"
+          curl -fsS --max-time 15 "${BASE_URL%/}/v3/api-docs" \
+            | jq -er '.openapi | strings | select(length > 0)'

@@ -175,6 +175,7 @@ nbdist/
 
 ### Codex
 .omx/
+.codex
 
 # macOS
 .DS_Store
