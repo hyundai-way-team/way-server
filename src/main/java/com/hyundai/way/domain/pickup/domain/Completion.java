@@ -4,6 +4,9 @@ import com.hyundai.way.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -16,14 +19,20 @@ import lombok.NoArgsConstructor;
 public class Completion extends BaseEntity {
 
     @Id
-    @Column(name = "pickup_id", nullable = false)
+    @Column(nullable = false)
     private Long pickupId;
 
-    private Completion(Long pickupId) {
-        this.pickupId = pickupId;
+    @MapsId
+    @OneToOne
+    @JoinColumn(name = "pickup_id")
+    private Pickup pickup;
+
+    private Completion(Pickup pickup) {
+        this.pickup = pickup;
+        pickup.connectWithCompletion(this);
     }
 
-    public static Completion create(Long pickupId) {
-        return new Completion(pickupId);
+    public static Completion create(Pickup pickup) {
+        return new Completion(pickup);
     }
 }

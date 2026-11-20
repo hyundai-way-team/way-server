@@ -1,11 +1,17 @@
 package com.hyundai.way.domain.pickup.domain;
 
+import com.hyundai.way.domain.invitation.domain.Invitation;
+import com.hyundai.way.domain.vehicle.domain.Vehicle;
 import com.hyundai.way.global.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -13,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Table(name = "pickup")
 @Entity
@@ -21,7 +28,7 @@ import java.time.Instant;
 public class Pickup extends BaseEntity {
 
     @Id @GeneratedValue
-    @Column(name = "id", nullable = false)
+    @Column(name = "pickup_id")
     private Long id;
 
     @Column(name = "request_id", nullable = false)
@@ -39,25 +46,59 @@ public class Pickup extends BaseEntity {
     @Column(name = "waiting_ends_at")
     private Instant waitingEndsAt;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "vehicle_key", nullable = false)
+    private Vehicle vehicle;
+
+    @OneToOne(mappedBy = "pickup")
+    private Invitation invitation;
+
+    @OneToOne(mappedBy = "pickup")
+    private Completion completion;
+
     //=== Constructor ===
     @Builder(access = AccessLevel.PRIVATE)
-    public Pickup(String requestId, String passengerName, Locaion pickupLocation, String destination, Instant waitingEndsAt) {
+    private Pickup(String requestId, String passengerName, Locaion pickupLocation,
+                   String destination, Instant waitingEndsAt, Vehicle vehicle) {
         this.requestId = requestId;
         this.passengerName = passengerName;
         this.pickupLocation = pickupLocation;
         this.destination = destination;
         this.waitingEndsAt = waitingEndsAt;
+        this.vehicle = vehicle;
     }
 
     public static Pickup create(
-            String requestId, String passengerName, Locaion pickupLocation, String destination, Instant waitingEndsAt) {
-        return Pickup.builder()
+            String requestId, String passengerName, Locaion pickupLocation,
+            String destination, Instant waitingEndsAt, Vehicle vehicle, Completion completion) {
+        Pickup build = Pickup.builder()
                 .requestId(requestId)
                 .passengerName(passengerName)
                 .pickupLocation(pickupLocation)
                 .destination(destination)
                 .waitingEndsAt(waitingEndsAt)
                 .build();
+
+        build.connectWithVehicle(vehicle);
+
+        return build;
+    }
+
+    //=== Util Method ==
+
+    public void connectWithVehicle(Vehicle vehicle) {
+        vehicle.getPickups().add(this);
+        this.vehicle = vehicle;
+    }
+
+    public void connectWithInvitation(Invitation invitation) {
+        Objects.requireNonNull(invitation, "invitation is not null");
+        this.invitation = invitation;
+    }
+
+    public void connectWithCompletion(Completion completion) {
+        Objects.requireNonNull(invitation, "completion is not null");
+        this.completion = completion;
     }
 
     //=== Domain Polish ===
