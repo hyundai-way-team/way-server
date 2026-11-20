@@ -97,7 +97,7 @@ public class Pickup extends BaseEntity {
     }
 
     public void connectWithCompletion(Completion completion) {
-        Objects.requireNonNull(invitation, "completion is not null");
+        Objects.requireNonNull(completion, "completion is not null");
         this.completion = completion;
     }
 
