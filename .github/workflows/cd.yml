@@ -100,7 +100,7 @@ jobs:
           fi
           printf 'arn=%s\n' "$arn" >> "$GITHUB_OUTPUT"
 
-      - name: Set the new image in the task definition
+      - name: Set the image and environment in the task definition
         id: render
         if: steps.current-task.outputs.arn != ''
         uses: aws-actions/amazon-ecs-render-task-definition@v1.9.1
@@ -108,6 +108,9 @@ jobs:
           task-definition-arn: ${{ steps.current-task.outputs.arn }}
           container-name: way-server
           image: ${{ steps.push-image.outputs.image }}
+          environment-variables: >-
+            ${{ vars.WAY_PICKUP_INVITATION_WEB_BASE_URL &&
+                format('WAY_PICKUP_INVITATION_WEB_BASE_URL={0}', vars.WAY_PICKUP_INVITATION_WEB_BASE_URL) || '' }}
 
       - name: Deploy to the ECS service
         id: deploy
