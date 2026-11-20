@@ -2,12 +2,47 @@
 
 픽업 도메인, API 계약, 차량·동승자 권한, 실시간 통신을 설계하거나 변경하기 전에 [WAY 서버 맥락](docs/project-context.md)의 관련 항목과 연결된 명세를 확인한다.
 
-## Code Review Rules
+## 서버 구조
 
-PR에서 바뀐 코드가 아래 동작을 깨뜨리는지 확인한다. 리뷰 코멘트에는 문제가 생기는 변경 줄과 재현 조건을 짚고, 클라이언트나 서버 동작에 미치는 영향을 적는다. 팀 명세를 열 수 없으면 저장소에 기록된 결정과 테스트를 근거로 삼는다. 미정인 계약은 확인 사항으로 남긴다.
+WAY 서버는 `WayApplication`에서 시작하는 Spring Boot 애플리케이션이다. MVP는 차량 앱과 동승자 웹이 REST로 픽업 상태를 조회하고 WebSocket으로 변경을 받으며, 서버는 JPA로 MySQL에 데이터를 저장하는 구조로 설계했다. [서버 구조](README.md#서버-구조)
 
-- **클라이언트 계약**. REST 상태 코드, 헤더, JSON 필드의 타입·단위·`null` 처리, WebSocket 메시지가 바뀌면 차량 앱과 동승자 웹이 기존 계약대로 동작할 수 있는지 확인한다. REST 오류는 최상위 `code`와 `message`를 유지하고, 필드 검증 실패에만 `errors`를 포함한다. 서버 내부 예외가 응답에 노출되는지 확인한다.
-- **픽업 접근 권한**. REST와 WebSocket에서 차량은 등록된 `VIN`과 `X-Device-Id` 조합 및 픽업 소유권을, 동승자는 서명된 세션의 유효성과 요청한 픽업의 일치를 확인한다. 변경으로 다른 픽업의 정보에 접근하거나 초대 코드·토큰·전화번호·위치가 로그 또는 권한 없는 상대에게 노출될 수 있는지 확인한다.
-- **생성 및 초대 교환**. 픽업과 초대는 한 트랜잭션에서 생성한다. 같은 `(차량 키, requestId)`로 동시에 생성하거나 응답 유실 후 재시도해도 같은 `pickupId`를 사용한다. 한 초대에 대한 최초 코드 교환은 동시 요청 중 한 건만 성공해야 한다.
-- **대기 및 완료**. 처음 수락한 `waitStartTime`에 60초를 더해 대기 종료 시각을 정하고, 재요청과 재조회에서 같은 종료 시각을 사용한다. 이동 중과 대기 중 모두 완료할 수 있어야 한다. 뒤늦은 대기 요청이 완료된 픽업을 되돌리거나, 동시 완료 요청이 완료 기록을 중복 생성하는지 확인한다.
-- **실시간 연결**. 첫 연결과 재연결에서 `READY`를 받은 클라이언트가 REST로 현재 상태를 복구할 수 있는지 확인한다. 픽업 완료 후에는 동승자 접근과 위치 전송을 중단한다. 종료 이벤트 전송이 실패해도 WebSocket을 닫아야 한다.
+현재 소스의 주요 패키지는 다음과 같다.
+
+```text
+com.hyundai.way
+├── WayApplication
+├── domain
+│   ├── pickup
+│   │   ├── exception    
+│   │   ├── domain       
+│   │   ├── repository        
+│   │   ├── service        
+│   │   ├── controller
+│   │   └── dto
+│   │       ├── request
+│   │       └── response     
+│   └── vehicle
+│       └── ...
+└── global
+    ├── config   
+    ├── entity            
+    └── exception         
+```
+
+- 업무 규칙, 엔티티, 도메인 예외는 소유 도메인에 둔다. 공통 설정은 `global.config`에 둔다.
+- 업무 기능을 구현할 때 필요한 `controller`, `service`, `repository`, `dto.request`, `dto.response`는 해당 `domain.<업무>` 아래에 만든다. 컨트롤러는 요청 바인딩과 입력 검증, 서비스 호출, HTTP 응답 구성을 맡는다. 서비스는 유스케이스를 조율하고 저장소는 영속성 접근을 맡는다.
+
+## 코드와 협업 컨벤션
+
+- 클래스는 `PascalCase`, 메서드·변수는 `camelCase`, 상수는 `UPPER_SNAKE_CASE`를 쓴다. 의존성은 `private final` 필드에 생성자로 주입하고, 단순 생성자에는 `@RequiredArgsConstructor`를 사용한다. 서비스는 구체 클래스로 시작한다. [Java와 Spring 규칙](CONTRIBUTING.md#java와-spring)
+- JPA 엔티티의 클래스 이름은 단수 명사로 짓는다. 필요한 접근자에 `@Getter`를 사용하고 기본 생성자는 `protected`로 둔다. 상태 변경에는 `startWaiting()`처럼 업무 의도가 드러나는 메서드를 사용한다.
+- REST 경로는 `/api/v1`로 시작하고 컬렉션은 소문자 복수 명사, JSON 필드는 `camelCase`를 쓴다. 요청과 응답은 `record` DTO로 정의하고, 본문이 있는 성공 응답은 API별 DTO를 직접 반환한다. 업무 오류는 소유 도메인의 예외와 오류 코드로 정의하고 `GlobalExceptionHandler`에서 공통 오류 응답으로 처리한다. [REST API와 오류 규칙](CONTRIBUTING.md#rest-api와-오류)
+- PR은 목적 하나를 담아 `main`을 대상으로 연다. 제목은 `[Feat]`, `[Fix]`, `[Chore]`, `[Docs]`, `[Refactor]` 중 하나로 시작하고 이모지는 생략한다. 변경 이유, 클라이언트 연동 영향, 검증 방법과 결과를 기록한다. 병합은 squash 방식으로 진행하고 PR 제목을 커밋 제목으로 사용한다. [브랜치와 PR 규칙](CONTRIBUTING.md#브랜치와-pr)
+
+## 실행과 검증
+
+저장소 루트에서 JDK 21과 Gradle Wrapper를 사용한다. 로컬 서버 기동(`./gradlew bootRun`)과 MySQL이 필요한 테스트의 연결 설정은 [README의 실행 절차](README.md#기술-스택과-실행)를 따른다. 변경 범위에 해당하는 테스트는 `./gradlew test --tests '<테스트 클래스 또는 패턴>'`으로 실행할 수 있다. CI는 MySQL을 연결해 `./gradlew build`를 실행하고 Docker 이미지 빌드를 확인한다. [.github/workflows/ci.yml](.github/workflows/ci.yml)
+
+## 코드 리뷰
+
+PR 리뷰를 시작하기 전에 [WAY 서버 코드 리뷰 규칙](docs/code-review.md)을 읽고 변경 범위에 해당하는 기준을 적용한다.
