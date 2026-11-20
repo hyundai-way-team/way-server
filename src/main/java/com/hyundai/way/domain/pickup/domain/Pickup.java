@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +22,15 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 import java.util.Objects;
 
-@Table(name = "pickup")
+@Table(
+        name = "pickup",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_pickup_vehicle_key_request_id",
+                        columnNames = {"vehicle_key", "request_id"}
+                )
+        }
+)
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
