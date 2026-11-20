@@ -60,7 +60,7 @@ public class Pickup extends BaseEntity {
     @JoinColumn(name = "vehicle_key", nullable = false)
     private Vehicle vehicle;
 
-    @OneToOne(mappedBy = "pickup")
+    @OneToOne(mappedBy = "pickup", cascade = CascadeType.PERSIST)
     private Invitation invitation;
 
     @OneToOne(mappedBy = "pickup", cascade = CascadeType.PERSIST)
