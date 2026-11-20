@@ -37,29 +37,42 @@ public class PickupService {
 
     @Transactional
     public PickupCreateResult createPickup(PickupCreateCommand command, String vin) {
-        Vehicle vehicle = vehicleRepository.findByVehicleKey(vin)
-                .filter(registeredVehicle -> vin.equals(registeredVehicle.getVehicleKey()))
-                .orElseThrow(() -> new VehicleException(VehicleErrorCode.VEHICLE_NOT_REGISTERED));
-
+        Vehicle vehicle = findRegistryVehicleFromVin(vin);
         String codeLookupKey = generateParticipationCode();
+        PickupCreateResult existingPickup = getExistingPickup(command, vehicle);
 
-        Optional<Pickup> existingPickup = pickupRepository.findByVehicleAndRequestId(vehicle, command.requestId());
-        if (existingPickup.isPresent()) {
-            return getPickupCreateResult(existingPickup.get(), "webHost", "");
-        }
+        if (existingPickup != null) return existingPickup;
 
         Passenger passenger = command.passenger();
         PickupLocation pickupLocation = command.pickupLocation();
         Locaion locaion = Locaion.create(pickupLocation.address(), pickupLocation.latitude(), pickupLocation.longitude());
 
-        Pickup pickup = Pickup.create(command.requestId(), passenger.name(), locaion, command.destination(), vehicle);
-        Invitation.create(pickup, codeLookupKey, Instant.now().plus(Duration.ofMinutes(30)));
-        Completion.create(pickup);
+        Pickup pickup = createPickupAggregate(command, passenger, locaion, vehicle, codeLookupKey);
 
         Pickup savedPickup = pickupRepository.save(pickup);
 
         //TODO: 추후 웹소켓 기능 제작되면 webHost 전달
         return getPickupCreateResult(savedPickup, "webHost", codeLookupKey);
+    }
+
+    private static Pickup createPickupAggregate(PickupCreateCommand command, Passenger passenger, Locaion locaion, Vehicle vehicle, String codeLookupKey) {
+        Pickup pickup = Pickup.create(command.requestId(), passenger.name(), locaion, command.destination(), vehicle);
+        Invitation.create(pickup, codeLookupKey, Instant.now().plus(Duration.ofMinutes(30)));
+        Completion.create(pickup);
+        return pickup;
+    }
+
+    private PickupCreateResult getExistingPickup(PickupCreateCommand command, Vehicle vehicle) {
+        Optional<Pickup> existingPickup = pickupRepository.findByVehicleAndRequestId(vehicle, command.requestId());
+        return existingPickup
+                .map(pickup -> getPickupCreateResult(pickup, "webHost", ""))
+                .orElse(null);
+    }
+
+    private Vehicle findRegistryVehicleFromVin(String vin) {
+        return vehicleRepository.findByVehicleKey(vin)
+                .filter(registeredVehicle -> vin.equals(registeredVehicle.getVehicleKey()))
+                .orElseThrow(() -> new VehicleException(VehicleErrorCode.VEHICLE_NOT_REGISTERED));
     }
 
     private String generateParticipationCode() {
