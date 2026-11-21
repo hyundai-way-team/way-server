@@ -72,7 +72,7 @@ public class PickupService {
         Invitation.create(pickup, ParticipationCode.lookupKey(participationCode), expiresAt);
 
         Long pickupId = pickupRepository.save(pickup).getId();
-        invitationLinks.values().removeIf(link -> !link.expiresAt().isAfter(now));
+        invitationLinks.values().removeIf(link -> isExpired(link, now));
         rememberInvitationLink(pickupId, new InvitationLink(invitationUrl, expiresAt));
         return PickupCreateResult.from(pickupId, invitationUrl);
     }
@@ -82,11 +82,15 @@ public class PickupService {
         if (link == null) {
             throw new PickupException(PickupErrorCode.INVITATION_LINK_UNAVAILABLE);
         }
-        if (!link.expiresAt().isAfter(Instant.now())) {
+        if (isExpired(link, Instant.now())) {
             invitationLinks.remove(pickupId, link);
             throw new PickupException(PickupErrorCode.INVITATION_LINK_UNAVAILABLE);
         }
         return PickupCreateResult.from(pickupId, link.url());
+    }
+
+    private boolean isExpired(InvitationLink link, Instant now) {
+        return !link.expiresAt().isAfter(now);
     }
 
     private String createInvitationUrl(String participationCode) {
