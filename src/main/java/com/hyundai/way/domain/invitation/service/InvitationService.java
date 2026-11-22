@@ -29,8 +29,8 @@ public class InvitationService {
     @Transactional
     public ExchangeInvitationResult exchangeInvitationCode(ExchangeInvitationCommand command) {
         String codeLookupKey = ParticipationCode.lookupKey(command.participationCode());
-        // TODO: 초대를 조회할 때 비관적 락을 적용해 최초 교환을 한 번만 허용한다.
-        Invitation invitation = invitationRepository.findByCodeLookupKey(codeLookupKey)
+
+        Invitation invitation = invitationRepository.findByCodeLookupKeyForUpdate(codeLookupKey)
                 .orElseThrow(() -> new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE));
 
         Long pickupId = invitation.getPickupId();
