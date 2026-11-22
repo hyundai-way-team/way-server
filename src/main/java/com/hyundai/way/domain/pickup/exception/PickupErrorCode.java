@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum PickupErrorCode implements ErrorCode {
 
+    PICKUP_NOT_FOUND(HttpStatus.NOT_FOUND, "PICKUP_NOT_FOUND", "존재하지 않는 픽업입니다."),
 
     INVITATION_UNAVAILABLE(HttpStatus.FORBIDDEN, "INVITATION_UNAVAILABLE", "사용할 수 없는 초대입니다."),
     INVITATION_LINK_UNAVAILABLE(HttpStatus.CONFLICT, "INVITATION_LINK_UNAVAILABLE", "기존 초대 링크를 복구할 수 없습니다.");

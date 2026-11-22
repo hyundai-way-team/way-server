@@ -1,5 +1,7 @@
 package com.hyundai.way.domain.invitation.domain;
 
+import com.hyundai.way.domain.invitation.exception.InviationErrorCode;
+import com.hyundai.way.domain.invitation.exception.InviationException;
 import com.hyundai.way.domain.pickup.domain.Pickup;
 import com.hyundai.way.global.entity.BaseEntity;
 import jakarta.persistence.Column;
@@ -41,10 +43,11 @@ public class Invitation extends BaseEntity {
     private Pickup pickup;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Invitation(Pickup pickup, String codeLookupKey, Instant codeExpiresAt) {
+    private Invitation(Pickup pickup, String codeLookupKey, Instant codeExpiresAt, Boolean codeConsumed) {
         this.pickup = pickup;
         this.codeLookupKey = codeLookupKey;
         this.codeExpiresAt = codeExpiresAt;
+        this.codeConsumed = codeConsumed;
     }
 
     public static Invitation create(Pickup pickup, String codeLookupKey, Instant codeExpiresAt) {
@@ -52,7 +55,9 @@ public class Invitation extends BaseEntity {
                 .pickup(pickup)
                 .codeLookupKey(codeLookupKey)
                 .codeExpiresAt(codeExpiresAt)
+                .codeConsumed(false)
                 .build();
+
         invitation.connectWithPickup(pickup);
 
         return invitation;
@@ -65,6 +70,14 @@ public class Invitation extends BaseEntity {
         //TODO: 이미 픽업이 연결된 초대링크인 경우 예외 처리 필요
 
         this.pickup = pickup;
+    }
+
+    //=== Domain Polish ===
+
+    public void consumingCode() {
+        if(codeConsumed) throw new InviationException(InviationErrorCode.ALREADY_CONSUMED_CODE);
+
+        this.codeConsumed = true;
     }
 
 }
