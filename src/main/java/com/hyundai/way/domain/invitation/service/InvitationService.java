@@ -34,28 +34,41 @@ public class InvitationService {
                 .orElseThrow(() -> new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE));
 
         Long pickupId = invitation.getPickupId();
-        Pickup pickup = pickupRepository.findById(pickupId)
-                .orElseThrow(() -> new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE));
-        if (pickup.getCompletion() != null) {
-            throw new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE);
-        }
+
+        Pickup pickup = getPickup(pickupId);
+
+        checkPickupNotCompleted(pickup);
 
         if (invitation.isCodeConsumed()) {
-            String accessToken = command.accessToken();
-            if (accessToken == null || accessToken.isBlank()) {
-                throw new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE);
-            }
+            requireReentryToken(command.accessToken());
             // TODO: 토큰이 이 초대에 대해 유효한지 확인한다.
             return ExchangeInvitationResult.reentry(pickupId);
         }
 
-        if (isCodeExpired(invitation)) {
-            throw new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE);
-        }
+        validCodeExpired(isCodeExpired(invitation));
 
         invitation.consumingCode();
         String newAccessToken = AccessCodeGenerator.issue(SECURE_RANDOM);
         return ExchangeInvitationResult.firstExchange(pickupId, newAccessToken);
+    }
+
+    private void requireReentryToken(String accessToken) {
+        validCodeExpired(accessToken == null || accessToken.isBlank());
+    }
+
+    private void checkPickupNotCompleted(Pickup pickup) {
+        validCodeExpired(pickup.getCompletion() != null);
+    }
+
+    private void validCodeExpired(boolean invitation) {
+        if (invitation) {
+            throw new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE);
+        }
+    }
+
+    private Pickup getPickup(Long pickupId) {
+        return pickupRepository.findById(pickupId)
+                .orElseThrow(() -> new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE));
     }
 
     private boolean isCodeExpired(Invitation invitation) {

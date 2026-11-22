@@ -35,6 +35,12 @@ public class InvitationController {
 
         ResponseEntity.BodyBuilder response = ResponseEntity.ok();
         String newAccessToken = result.newAccessToken();
+        setAccessTokenCookie(newAccessToken, response);
+
+        return response.body(ExchangeInvitationResponse.create(result.pickupId()));
+    }
+
+    private void setAccessTokenCookie(String newAccessToken, ResponseEntity.BodyBuilder response) {
         if (newAccessToken != null) {
             ResponseCookie cookie = ResponseCookie.from(ACCESS_TOKEN_COOKIE, newAccessToken)
                     .path("/")
@@ -44,7 +50,5 @@ public class InvitationController {
                     .build();
             response.header(HttpHeaders.SET_COOKIE, cookie.toString());
         }
-
-        return response.body(ExchangeInvitationResponse.create(result.pickupId()));
     }
 }
