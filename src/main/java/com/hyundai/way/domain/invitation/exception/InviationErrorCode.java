@@ -9,10 +9,9 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum InviationErrorCode implements ErrorCode {
 
-    ALREADY_CONSUMED_CODE(HttpStatus.BAD_REQUEST, "ALREADY_CONSUMED_CODE", "이미 사용이 완료된 코드입니다."),
+    ALREADY_CONSUMED_CODE(HttpStatus.FORBIDDEN, "ALREADY_CONSUMED_CODE", "이미 사용이 완료된 코드입니다."),
 
-    INVITATION_UNAVAILABLE_CODE(HttpStatus.FORBIDDEN, "INVITATION_UNAVAILABLE_CODE", "등록되지 않은 초대 코드입니다. 올바른 코드를 입력해주세요."),
-    ;
+    INVITATION_UNAVAILABLE(HttpStatus.FORBIDDEN, "INVITATION_UNAVAILABLE", "사용할 수 없는 초대입니다.");
 
     private final HttpStatus status;
     private final String code;

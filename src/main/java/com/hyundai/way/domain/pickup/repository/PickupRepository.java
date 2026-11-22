@@ -13,5 +13,4 @@ public interface PickupRepository extends JpaRepository<Pickup, Long> {
 
     Optional<Pickup> findByVehicleAndRequestId(Vehicle vehicle, String requestId);
 
-//    List<Pickup> findByVehicle(Vehicle vehicle);
 }

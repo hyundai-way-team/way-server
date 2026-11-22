@@ -1,10 +1,16 @@
 package com.hyundai.way.domain.invitation.dto.response;
 
+import org.jspecify.annotations.Nullable;
+
 public record ExchangeInvitationResult(
-        String accessCode,
-        String pickupId
+        String pickupId,
+        @Nullable String newAccessToken
 ) {
-    public static ExchangeInvitationResult from(String accessCode, Long pickupId) {
-        return new ExchangeInvitationResult(accessCode, pickupId.toString());
+    public static ExchangeInvitationResult firstExchange(Long pickupId, String newAccessToken) {
+        return new ExchangeInvitationResult(pickupId.toString(), newAccessToken);
+    }
+
+    public static ExchangeInvitationResult reentry(Long pickupId) {
+        return new ExchangeInvitationResult(pickupId.toString(), null);
     }
 }
