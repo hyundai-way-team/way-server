@@ -14,3 +14,7 @@ spring:
 
   config:
     import: "optional:file:./.env.local[.properties]"
+
+way:
+  invitation:
+    access-token-secret: "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="

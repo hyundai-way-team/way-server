@@ -25,6 +25,7 @@ public class InvitationService {
 
     private final InvitationRepository invitationRepository;
     private final PickupRepository pickupRepository;
+    private final PassengerAccessTokenService passengerAccessTokenService;
 
     @Transactional
     public ExchangeInvitationResult exchangeInvitationCode(ExchangeInvitationCommand command) {
@@ -40,15 +41,19 @@ public class InvitationService {
         checkPickupNotCompleted(pickup);
 
         if (invitation.isCodeConsumed()) {
-            requireReentryToken(command.accessToken());
-            // TODO: 토큰이 이 초대에 대해 유효한지 확인한다.
+            String accessToken = command.accessToken();
+            requireReentryToken(accessToken);
+            if (!passengerAccessTokenService.isValidFor(accessToken, pickupId)) {
+                throw new InviationException(InviationErrorCode.INVITATION_UNAVAILABLE);
+            }
+
             return ExchangeInvitationResult.reentry(pickupId);
         }
 
         validCodeExpired(isCodeExpired(invitation));
 
         invitation.consumingCode();
-        String newAccessToken = AccessCodeGenerator.issue(SECURE_RANDOM);
+        String newAccessToken = passengerAccessTokenService.issue(pickupId);
         return ExchangeInvitationResult.firstExchange(pickupId, newAccessToken);
     }
 
