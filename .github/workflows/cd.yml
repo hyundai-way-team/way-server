@@ -80,6 +80,7 @@ jobs:
         id: current-task
         env:
           GH_TOKEN: ${{ github.token }}
+          WAY_PASSENGER_ACCESS_TOKEN_SECRET: ${{ secrets.WAY_PASSENGER_ACCESS_TOKEN_SECRET }}
         run: |
           latest_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
           if [[ "$CI_SHA" != "$latest_sha" ]]; then
@@ -89,6 +90,11 @@ jobs:
 
           if [[ ! "$BASE_URL" =~ ^https?://[^[:space:]]+$ ]]; then
             echo 'Set the WAY_BASE_URL repository variable to the service base URL.' >&2
+            exit 1
+          fi
+
+          if [[ -z "$WAY_PASSENGER_ACCESS_TOKEN_SECRET" ]]; then
+            echo 'Set the WAY_PASSENGER_ACCESS_TOKEN_SECRET repository secret.' >&2
             exit 1
           fi
 
@@ -108,9 +114,10 @@ jobs:
           task-definition-arn: ${{ steps.current-task.outputs.arn }}
           container-name: way-server
           image: ${{ steps.push-image.outputs.image }}
-          environment-variables: >-
+          environment-variables: |-
             ${{ vars.WAY_PICKUP_INVITATION_WEB_BASE_URL &&
                 format('WAY_PICKUP_INVITATION_WEB_BASE_URL={0}', vars.WAY_PICKUP_INVITATION_WEB_BASE_URL) || '' }}
+            WAY_PASSENGER_ACCESS_TOKEN_SECRET=${{ secrets.WAY_PASSENGER_ACCESS_TOKEN_SECRET }}
 
       - name: Deploy to the ECS service
         id: deploy
