@@ -1,6 +1,7 @@
-package com.hyundai.way.invitation.service;
+package com.hyundai.way.domain.invitation.service;
 
 import com.hyundai.way.domain.invitation.domain.Invitation;
+import com.hyundai.way.domain.invitation.fixture.InvitationExchangeFixture;
 import com.hyundai.way.domain.invitation.repository.InvitationRepository;
 import com.hyundai.way.domain.pickup.domain.Locaion;
 import com.hyundai.way.domain.pickup.domain.Pickup;
@@ -34,6 +35,9 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.hyundai.way.domain.invitation.fixture.InvitationExchangeFixture.*;
+import static com.hyundai.way.domain.invitation.fixture.InvitationExchangeFixture.ExchangeFixture;
+import static com.hyundai.way.domain.invitation.fixture.InvitationExchangeFixture.saveExchangeFixture;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.assertj.core.api.Assertions.*;
 
@@ -52,49 +56,11 @@ public class InvitationServiceConcurrencyTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private InvitationRepository invitationRepository;
-
-    private ExchangeFixture saveExchangeFixture() {
-        TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-        transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
-
-        log.info("픽업·초대 준비 시작");
-        ExchangeFixture fixture = Objects.requireNonNull(transaction.execute(status -> {
-            String fixtureId = UUID.randomUUID().toString();
-            String participationCode = ParticipationCode.generate(new SecureRandom());
-
-            Vehicle vehicle = Vehicle.create(fixtureId);
-            em.persist(vehicle);
-
-            Pickup pickup = Pickup.create(
-                    fixtureId,
-                    "테스트 동승자",
-                    Locaion.create("테스트 픽업 장소", 37.59, 127.02),
-                    null,
-                    vehicle
-            );
-
-            Invitation.create(
-                    pickup, ParticipationCode.lookupKey(participationCode), Instant.now().plusSeconds(600));
-
-            em.persist(pickup);
-            em.flush();
-            log.info("픽업·초대 flush 완료, 커밋 전 pickupId={}", pickup.getId());
-
-            return new ExchangeFixture(pickup.getId(), participationCode);
-        }));
-        log.info("픽업·초대 커밋 완료 pickupId={}", fixture.pickupId());
-        return fixture;
-    }
-
-    private record ExchangeFixture(Long pickupId, String participationCode) {}
-
     @Test
     @DisplayName("최초 초대 교환시 레이스 컨디션을 방지하여 처음 요청된 것에 대해서만 코드를 교환한다.")
     void 같은_참여_코드의_최초_교환은_한_건만_성공한다() throws Exception {
         //given
-        ExchangeFixture fixture = saveExchangeFixture();
+        ExchangeFixture fixture = saveExchangeFixture(transactionManager, em);
         String body = """
             {"participationCode": "%s"}
             """.formatted(fixture.participationCode());
