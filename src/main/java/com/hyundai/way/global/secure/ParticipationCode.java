@@ -1,4 +1,4 @@
-package com.hyundai.way.domain.pickup.secure;
+package com.hyundai.way.global.secure;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

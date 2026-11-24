@@ -5,3 +5,7 @@ spring:
 way:
   pickup:
     invitation-web-base-url: ${WAY_PICKUP_INVITATION_WEB_BASE_URL:}
+
+  invitation:
+    access-token-secret: ${WAY_PASSENGER_ACCESS_TOKEN_SECRET}
+    access-token-ttl: ${WAY_PASSENGER_ACCESS_TOKEN_TTL:PT30M}

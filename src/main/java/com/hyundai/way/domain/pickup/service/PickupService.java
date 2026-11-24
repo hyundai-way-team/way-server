@@ -9,7 +9,7 @@ import com.hyundai.way.domain.pickup.dto.response.PickupCreateResult;
 import com.hyundai.way.domain.pickup.exception.PickupErrorCode;
 import com.hyundai.way.domain.pickup.exception.PickupException;
 import com.hyundai.way.domain.pickup.repository.PickupRepository;
-import com.hyundai.way.domain.pickup.secure.ParticipationCode;
+import com.hyundai.way.global.secure.ParticipationCode;
 import com.hyundai.way.domain.vehicle.domain.Vehicle;
 import com.hyundai.way.domain.vehicle.exception.VehicleErrorCode;
 import com.hyundai.way.domain.vehicle.exception.VehicleException;
