@@ -71,15 +71,13 @@ public class PassengerAccessTokenService {
             return false;
         }
 
-        SignedJWT jwt;
-        try {
-            // Nimbus 10.10 파싱 우회. 수정 버전에서 ParseException으로 처리되면 NPE catch를 제거한다.
-            jwt = SignedJWT.parse(accessToken);
-        } catch (ParseException | NullPointerException ignored) {
-            log.debug("동승자 토큰 파싱에 실패했습니다.");
-            return false;
-        }
+        SignedJWT jwt = parsePassengerToken(accessToken);
+        if (jwt == null) return false;
 
+        return isValidPassengerToken(pickupId, jwt);
+    }
+
+    private boolean isValidPassengerToken(Long pickupId, SignedJWT jwt) {
         try {
             if (!ALGORITHM.equals(jwt.getHeader().getAlgorithm()) || !jwt.verify(verifier)) {
                 return false;
@@ -97,6 +95,16 @@ public class PassengerAccessTokenService {
             return false;
         } catch (JOSEException exception) {
             throw new IllegalStateException("동승자 토큰 서명을 검증하지 못했습니다.", exception);
+        }
+    }
+
+    private SignedJWT parsePassengerToken(String accessToken) {
+        try {
+            // Nimbus 10.10 파싱 우회. 수정 버전에서 ParseException으로 처리되면 NPE catch를 제거한다.
+            return SignedJWT.parse(accessToken);
+        } catch (ParseException | NullPointerException ignored) {
+            log.debug("동승자 토큰 파싱에 실패했습니다.");
+            return null;
         }
     }
 
