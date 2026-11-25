@@ -1,10 +1,12 @@
 package com.hyundai.way.domain.invitation.controller;
 
+import com.hyundai.way.domain.invitation.controller.docs.ExchangeInvitationDocs;
 import com.hyundai.way.domain.invitation.dto.request.ExchangeInvitationCommand;
 import com.hyundai.way.domain.invitation.dto.request.ExchangeInvitationRequest;
 import com.hyundai.way.domain.invitation.dto.response.ExchangeInvitationResponse;
 import com.hyundai.way.domain.invitation.dto.response.ExchangeInvitationResult;
 import com.hyundai.way.domain.invitation.service.InvitationService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "동승자 초대 API", description = "동승자가 참여 코드를 교환하는 API")
 @RestController
 @RequestMapping("/api/v1/pickups/invitations")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class InvitationController {
 
     private final InvitationService invitationService;
 
+    @ExchangeInvitationDocs
     @PostMapping("/exchange")
     public ResponseEntity<ExchangeInvitationResponse> exchangeInvitationCode(
             @CookieValue(name = ACCESS_TOKEN_COOKIE, required = false) @Nullable String accessToken,
